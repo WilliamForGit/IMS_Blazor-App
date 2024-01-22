@@ -6,12 +6,10 @@ name: Build and deploy ASP.Net Core app to Azure Web App
 on:
   push:
     branches:
-      - Development
       - master
   pull_request:
     branches:
       - Development
-      - master
   workflow_dispatch:
     inputs:
       deployToProduction:
@@ -60,7 +58,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: .net-app
-      
+
       - name: Login to Azure
         uses: azure/login@v1
         with:
@@ -69,10 +67,8 @@ jobs:
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID }}
 
       - name: Deploy to Azure Web App
-        if: github.ref == 'refs/heads/master' && github.event.inputs.deployToProduction == 'yes' || github.ref == 'refs/heads/Development'
-        id: deploy-to-webapp
+        if: (github.ref == 'refs/heads/Development' && github.event_name == 'pull_request' && github.event.pull_request.merged == true) || (github.ref == 'refs/heads/master' && github.event.inputs.deployToProduction == 'yes')
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ github.ref == 'refs/heads/master' && 'Production-Web-App-Name' || 'Development-Web-App-Name' }}
-          slot-name: 'Production' # Adjust if you have different slot names
+          app-name: ${{ github.ref == 'refs/heads/master' && 'IMSBlazorApp-WilliamTest' || 'IMSBlazorApp-WilliamDev' }}
           package: ${{env.DOTNET_ROOT}}/myapp
