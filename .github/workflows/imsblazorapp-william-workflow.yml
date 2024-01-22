@@ -1,26 +1,30 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy ASP.NET Core app to Azure Web App
+name: Build and deploy ASP.Net Core app to Azure Web App
 
 on:
   push:
     branches:
       - Development
       - master
+  pull_request:
+    branches:
+      - Development
+      - master
   workflow_dispatch:
     inputs:
-      environment:
-        description: 'Target Environment'
+      deployToProduction:
+        description: 'Deploy to Production (yes/no)'
         required: true
-        default: 'Test'
+        default: 'no'
         type: choice
         options:
-          - 'Dev'
-          - 'Test'
+          - 'yes'
+          - 'no'
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: windows-latest
 
     steps:
@@ -29,24 +33,46 @@ jobs:
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '6.0'
+          dotnet-version: '6.x'
+          include-prerelease: true
 
       - name: Build with dotnet
         run: dotnet build --configuration Release
 
       - name: dotnet publish
-        run: dotnet publish -c Release -o ./publish
+        run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
 
-      - name: Login to Azure using User-assigned identity
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v3
+        with:
+          name: .net-app
+          path: ${{env.DOTNET_ROOT}}/myapp
+
+  deploy:
+    runs-on: windows-latest
+    needs: build
+    environment:
+      name: ${{ github.ref == 'refs/heads/master' && 'Production' || 'Development' }}
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v3
+        with:
+          name: .net-app
+      
+      - name: Login to Azure
         uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID }}
 
       - name: Deploy to Azure Web App
-        if: github.event.inputs.environment == 'Dev' && github.ref == 'refs/heads/Development' || github.event.inputs.environment == 'Test' && github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/master' && github.event.inputs.deployToProduction == 'yes' || github.ref == 'refs/heads/Development'
+        id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ github.event.inputs.environment == 'Dev' && 'Dev-Web-App-Name' || 'Test-Web-App-Name' }}
-          package: ./publish
-
-          
+          app-name: ${{ github.ref == 'refs/heads/master' && 'Production-Web-App-Name' || 'Development-Web-App-Name' }}
+          slot-name: 'Production' # Adjust if you have different slot names
+          package: ${{env.DOTNET_ROOT}}/myapp
