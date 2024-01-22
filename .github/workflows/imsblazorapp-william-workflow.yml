@@ -70,6 +70,7 @@ jobs:
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_09A9B28EC9D84641B1C8FF7EE6789738 }}
 
       - name: Deploy to Azure Web App
+        id: deploy-to-webapp  # This ID is used to reference the step's outputs
         if: (github.ref == 'refs/heads/Development' && github.event_name == 'pull_request' && github.event.pull_request.merged == true) || (github.ref == 'refs/heads/master' && github.event.inputs.deployToProduction == 'yes')
         uses: azure/webapps-deploy@v2
         with:
