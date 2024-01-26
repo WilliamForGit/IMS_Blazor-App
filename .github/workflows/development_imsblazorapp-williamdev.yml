@@ -41,7 +41,7 @@ jobs:
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
         with:
-          name: .net-app
+          name: .net-app-${{ github.ref }}
           path: ${{env.DOTNET_ROOT}}/myapp
 
   deploy:
@@ -62,7 +62,7 @@ jobs:
         if: needs.build.outputs.artifact_upload_url != ''   #
         uses: actions/download-artifact@v3
         with:
-          name: .net-app
+          name: .net-app-refs/heads/${{ github.event.inputs.targetBranch }}
       
       - name: Login to Azure
         uses: azure/login@v1
