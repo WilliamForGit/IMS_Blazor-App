@@ -4,10 +4,15 @@
 name: Build and deploy ASP.Net Core app to Azure Web App - IMSBlazorApp-WilliamDev
 
 on:
-  push:
+  pull_request:
     branches:
       - Development
   workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Deploy to Azure (yes/no)'
+        required: true
+        default: 'no'
 
 jobs:
   build:
