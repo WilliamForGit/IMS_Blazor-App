@@ -7,12 +7,16 @@ on:
   pull_request:
     branches:
       - Development
+      - master
   workflow_dispatch:
     inputs:
       deploy:
         description: 'Deploy to Azure (yes/no)'
         required: true
         default: 'no'
+      targetBranch:
+        description: 'Target branch (Development or master)'
+        required: true
 
 jobs:
   build:
@@ -62,11 +66,19 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_E77AF79193AF4655ABF15BC24B5ACD5F }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_95B1999579B842A88A20A1A2C80CB3FC }}
 
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
+      - name: Deploy to Azure Web App (Development)
+        if: github.event.inputs.targetBranch == 'Development'
+        #id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'IMSBlazorApp-WilliamDev'
           slot-name: 'Production'
           package: .
-          
+      
+      - name: Deploy to Azure Web App (master)
+        if: github.event.inputs.targetBranch == 'master'
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'IMSBlazorApp-WilliamTest'
+          slot-name: 'Production'
+          package: .
