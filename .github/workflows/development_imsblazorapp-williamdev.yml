@@ -12,7 +12,7 @@ on:
     inputs:
       deploy:
         description: 'Deploy to Azure (yes/no)'
-        required: true
+        required: true  #false or true?
         default: 'no'
       targetBranch:
         description: 'Target branch (Development or master)'
@@ -47,12 +47,12 @@ jobs:
   deploy:
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'yes' }}
     runs-on: windows-latest
-    needs: build
-    environment:
-      name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-    permissions:
-      id-token: write #This is required for requesting the JWT
+    #needs: build
+    #environment:
+      #name: 'Production'
+      #url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    #permissions:
+      #id-token: write #This is required for requesting the JWT
 
     steps:
       - name: Check out code 
