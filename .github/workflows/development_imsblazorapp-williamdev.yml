@@ -59,7 +59,8 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v3
         with:
-          name: .net-app-refs/heads/${{ github.event.inputs.targetBranch }}
+          name: .net-app-${{ github.event.inputs.targetBranch }}
+          #name: .net-app-refs/heads/${{ github.event.inputs.targetBranch }}
       
       - name: Login to Azure
         uses: azure/login@v1
