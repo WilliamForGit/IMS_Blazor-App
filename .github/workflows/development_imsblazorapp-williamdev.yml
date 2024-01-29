@@ -47,10 +47,10 @@ jobs:
   deploy:
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'yes' }}
     runs-on: windows-latest
-    #needs: build
-    #environment:
-      #name: 'Production'
-      #url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}    
+    needs: build
+    environment:
+      name: 'Production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}    
 
     steps:
       - name: Check out code 
