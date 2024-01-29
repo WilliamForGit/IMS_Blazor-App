@@ -12,7 +12,7 @@ on:
     inputs:
       deploy:
         description: 'Deploy to Azure (yes/no)'
-        required: true  #false or true?
+        required: true
         default: 'no'
       targetBranch:
         description: 'Target branch (Development or master)'
@@ -50,9 +50,7 @@ jobs:
     #needs: build
     #environment:
       #name: 'Production'
-      #url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-    #permissions:
-      #id-token: write #This is required for requesting the JWT
+      #url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}    
 
     steps:
       - name: Check out code 
