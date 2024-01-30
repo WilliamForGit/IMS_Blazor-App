@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy IMSBlazorApp to Azure Web App
+name: Build and Conditional Deploy to Azure
 
 on:
   pull_request:
@@ -11,15 +11,16 @@ on:
   workflow_dispatch:
     inputs:
       deploy:
-        description: 'Deploy to Azure (yes/no)'
+        description: 'Deploy to Azure? (yes/no)'
         required: true
         default: 'no'
       targetBranch:
-        description: 'Target branch (Development or master)'
+        description: 'Target branch (Development or Master)'
         required: true
-
+      
 jobs:
   build:
+    #if: github.event_name == 'pull_request'
     runs-on: windows-latest
 
     steps:
@@ -48,8 +49,8 @@ jobs:
     runs-on: windows-latest
     needs: build
     environment:
-      name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+       name: 'Production'
+       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
       id-token: write #This is required for requesting the JWT
 
@@ -57,28 +58,27 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v3
         with:
-          name: .net-app
-      
+         name: .net-app
+          
       - name: Login to Azure
         uses: azure/login@v1
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_05939DBC5E7F48D79035E121534273E5 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_E77AF79193AF4655ABF15BC24B5ACD5F }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_95B1999579B842A88A20A1A2C80CB3FC }}
-
+            
       - name: Deploy to Azure Web App (Development)
         if: github.event.inputs.targetBranch == 'Development'
-        #id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'IMSBlazorApp-WilliamDev'
-          slot-name: 'Production'
-          package: .
-      
-      - name: Deploy to Azure Web App (master)
-        if: github.event.inputs.targetBranch == 'master'
+           app-name: 'IMSBlazorApp-WilliamDev'
+           slot-name: 'Production'
+           package: .
+
+      - name: Deploy to Azure Web App (Master)
+        if: github.event.inputs.targetBranch == 'Master'
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'IMSBlazorApp-WilliamTest'
+          app-name: 'IMSBlazorApp-Production'
           slot-name: 'Production'
           package: .
