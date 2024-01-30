@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and Optional Manual Deploy to Azure Web App
+name: Build and Conditional Deploy to Azure
 
 on:
   pull_request:
@@ -11,12 +11,15 @@ on:
   workflow_dispatch:
     inputs:
       deploy:
-        description: 'Deploy after build? (yes/no)'
+        description: 'Deploy to Azure? (yes/no)'
         required: true
         default: 'no'
+      targetBranch:
+        description: 'Target branch (Development or Master)'
+        required: true
       
 jobs:
-  build_and_deploy:
+  build:
     if: github.event_name == 'pull_request'
     runs-on: windows-latest
 
@@ -35,26 +38,45 @@ jobs:
       - name: dotnet publish
         run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
 
-      # Conditional Deploy to Azure Web App          
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v3
+        with:
+          name: .net-app
+          path: ${{env.DOTNET_ROOT}}/myapp
+
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'yes' }}
+    runs-on: windows-latest
+    needs: build
+    environment:
+       name: 'Production'
+       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v3
+        with:
+         name: .net-app
+          
       - name: Login to Azure
         uses: azure/login@v1
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_05939DBC5E7F48D79035E121534273E5 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_E77AF79193AF4655ABF15BC24B5ACD5F }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_95B1999579B842A88A20A1A2C80CB3FC }}
-
+            
       - name: Deploy to Azure Web App (Development)
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'yes' && github.ref == 'refs/heads/Development'    
+        if: github.event.inputs.targetBranch == 'Development'
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'IMSBlazorApp-WilliamDev'
-          slot-name: 'Production'
-          package: ${{env.DOTNET_ROOT}}/myapp
-      
-      - name: Deploy to Azure Web App (master)
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'yes' && github.ref == 'refs/heads/master'
+           app-name: 'IMSBlazorApp-WilliamDev'
+           slot-name: 'Production'
+           package: .
+
+      - name: Deploy to Azure Web App (Master)
+        if: github.event.inputs.targetBranch == 'Master'
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'IMSBlazorApp-WilliamTest'
+          app-name: 'IMSBlazorApp-Production'
           slot-name: 'Production'
           package: .
